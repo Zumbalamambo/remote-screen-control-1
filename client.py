@@ -127,6 +127,42 @@ else:
 				y = int(y)
 				pyautogui.moveTo(x,y)
 				pyautogui.click(button='right')
+			if type == 0:
+				x = s1.recv(20)
+				if x == 'BackSpace':
+					pyautogui.press('backspace')
+				elif x == 'Delete':
+					pyautogui.press('delete')
+				elif x == 'Return':
+					pyautogui.press('enter')
+				elif x == 'Tab':
+					pyautogui.press('tab')
+				elif x == 'Control_L':
+					pyautogui.press('ctrlleft')
+				elif x == 'Control_R':
+					pyautogui.press('ctrlright')
+				elif x == 'Alt_L':
+					pyautogui.press('altleft')
+				elif x == 'Alt_R':
+					pyautogui.press('altright')				
+				elif x == 'Shift_L':
+					pyautogui.press('shiftleft')
+				elif x == 'Shift_R':
+					pyautogui.press('shiftright')
+				elif x == 'Escape':
+					pyautogui.press('esc')
+				elif x == 'space':
+					pyautogui.press(' ')
+				elif x == 'Up':
+					pyautogui.press('up')
+				elif x == 'Down':
+					pyautogui.press('down')
+				elif x == 'Right':
+					pyautogui.press('right')
+				elif x == 'Left':
+					pyautogui.press('left')
+				else:
+					pyautogui.press(x)
 		except Exception as error:
 			print ("Error is:", a)  
 		

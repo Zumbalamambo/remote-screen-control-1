@@ -4,6 +4,7 @@ import os,sys
 import PIL
 import Tkinter as tk
 import io
+import pyxhook
 import cv2
 import numpy as np
 from PIL import Image, ImageTk
@@ -107,7 +108,7 @@ conn, addr = s.accept()
 print 'Connection address for receiving frames:', addr
 sc = ScreenFeed('Teamviewer')
 
-#Sending Events for left and right mouse clicks
+#Sending Events for left, right mouse clicks and keyboards
 def left(event):
 	type = 1
 	conn2.send(str(type).zfill(2))
@@ -119,6 +120,11 @@ def right(event):
 	conn2.send(str(type).zfill(2))
 	conn2.send(str(event.x).zfill(4))
 	conn2.send(str(event.y).zfill(4))
+
+def kbevent( event ):
+    	type = 0
+	conn1.send(str(type).zfill(2))  	
+	conn1.send(event.Key)
 
 def quit(event):
 	print ("Double Click, so let's stop", repr(event))
@@ -169,9 +175,14 @@ if(pid != 0):
 		conn.close
 else:
 
+	hookman = pyxhook.HookManager()
+	hookman.KeyDown = kbevent
+	hookman.HookKeyboard()
+	hookman.start()
 	running = True
 	while running:
 		time.sleep(0.1)
+	hookman.cancel()
 
     
 root.mainloop()
