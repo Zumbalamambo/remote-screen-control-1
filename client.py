@@ -3,6 +3,7 @@ import os
 from screenfeed import ScreenFeed
 import time
 import pyautogui
+import io
 
 
 host = ''
@@ -38,8 +39,6 @@ ad3 = ad3.replace("'", "")
 ad3 = ad3.replace(",", "")
 TCP_IP_2 = str(ad3)
 TCP_IP = message
-print TCP_IP_2
-print TCP_IP
 host = TCP_IP
 s.close()
 time.sleep(1)
@@ -163,6 +162,32 @@ else:
 					pyautogui.press('left')
 				else:
 					pyautogui.press(x)
+			if type == 3:
+				farray = []
+				fsize = s1.recv(3)
+				fs = int(fsize)
+				print fs
+				filename = s1.recv(fs)
+				print filename
+				filename = filename.strip()				
+				meta = s1.recv(8)
+				print meta
+				m = int(meta)
+				print m
+				mrec = 0
+				while mrec < m:
+					chunk = s1.recv(m - mrec)
+					if chunk == b'':
+						raise RuntimeError("Socket connection broken")
+					farray.append(chunk)
+					mrec +=  len(chunk)
+				f = ''.join(farray)
+				f2 = open(filename, 'wb').write(f)
+			if type == 4:
+				s.close()
+				s1.close()
+				os.system("kill "+ str(child))
+				sys.exit()			
 		except Exception as error:
 			print ("Error is:", a)  
 		

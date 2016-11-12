@@ -8,11 +8,16 @@ import pyxhook
 import cv2
 import numpy as np
 from PIL import Image, ImageTk
+import PIL.Image
 from screenfeed import ScreenFeed
+from Tkinter import *
 import traceback
+from tkFileDialog import askopenfilename
 
 
-
+child = 0
+new_width = 0
+new_height = 0
 host = ''
 port_1 = 9090
 port_2 = 9091
@@ -43,7 +48,6 @@ s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.connect(('8.8.8.8', 0))
 msg = s.getsockname()[0]
 TCP_IP = msg
-print TCP_IP
 dest = ('<broadcast>',10100)
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -68,6 +72,83 @@ s.listen(5)
 soc_recv_size = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 soc_recv_size.bind((host,port_3))
 soc_recv_size.listen(5)
+
+#Sending Events for left, right mouse clicks, keyboards, file transfer and hotkeys
+def left(event):
+	type = 1
+	conn2.send(str(type).zfill(2))
+	conn2.send(str(event.x).zfill(4))
+	conn2.send(str(event.y).zfill(4))
+
+def right(event):
+	type = 2
+	conn2.send(str(type).zfill(2))
+	conn2.send(str(event.x).zfill(4))
+	conn2.send(str(event.y).zfill(4))
+
+def kbevent( event ):
+    	type = 0
+	conn1.send(str(type).zfill(2))  	
+	conn1.send(event.Key)
+
+def quit(event):
+	print ("Double Click, so let's stop", repr(event))
+
+def sendHotKey():
+	type = 0
+	conn1.send(str(type).zfill(2))  	
+	conn1.send("Term")	
+
+def _resize_image(event):
+        origin = (0,0)
+        size = (event.width, event.height)
+	if label.bbox("bg") != origin + size:
+        	global new_height 
+		new_height = event.height
+		global new_width 
+		new_width = event.width
+		print new_width, new_height	
+
+
+def sendFile():
+	try:
+		Tk().withdraw()
+		filename = askopenfilename()
+		list = filename.split('/')
+		l = len(list)
+		filename = filename.replace(' ', '')
+		type = 3
+		conn1.send(str(type).zfill(2))		
+		conn1.send(str(len(list[l-1])).zfill(3))
+		print len(list[l-1])		
+		conn1.send(str(list[l-1]))	
+		f = open(filename, 'rb').read()
+		meta = len(f)
+		print f
+		print meta
+		conn1.send(str(meta).zfill(8))
+		m = 0
+		while m < meta :
+			sent = conn1.send(f[m:])
+			if sent == 0:
+				raise RuntimeError("Socket connection broken")
+			m += sent
+		
+	except Exception as a:
+		print ("Error is: ", a)
+
+def closeButton():
+	type = 4
+	conn1.send(str(type).zfill(2))
+	conn1.close()
+	conn2.close()
+	s1.close()
+	s.close()	
+	root.destroy()
+	os.system("kill "+str(child))
+	sys.exit()
+
+
 
 
 conn1, addr1 = soc_recv_size.accept()
@@ -97,9 +178,19 @@ screen_width = int(widthstr)
 conn1.close()
 soc_recv_size.close()
 
+new_width = screen_width/2
+new_height = screen_height/2
+
 root = tk.Tk()
+root.title("Harambe")
 root.geometry(str(screen_width) + "x" + str(screen_height))
 
+openTerm = tk.Button(root, text = "Open Terminal", padx = 10, pady = 10, justify = CENTER, command = sendHotKey)
+openTerm.place(y = (new_height), x = (new_width - 400))   	
+sendFile = tk.Button(root, text = "Send File", padx = 10, pady = 10, justify = CENTER, command = sendFile)
+sendFile.place(y = (new_height), x = (400))   
+closeB = tk.Button(root, text = "X", padx = 10, pady = 10, justify = CENTER, command = closeButton)
+closeB.place(y = (new_height), x = 50)
 
 
 conn2, addr2 = soc_event.accept()
@@ -108,26 +199,6 @@ conn, addr = s.accept()
 print 'Connection address for receiving frames:', addr
 sc = ScreenFeed('Teamviewer')
 
-#Sending Events for left, right mouse clicks and keyboards
-def left(event):
-	type = 1
-	conn2.send(str(type).zfill(2))
-	conn2.send(str(event.x).zfill(4))
-	conn2.send(str(event.y).zfill(4))
-
-def right(event):
-	type = 2
-	conn2.send(str(type).zfill(2))
-	conn2.send(str(event.x).zfill(4))
-	conn2.send(str(event.y).zfill(4))
-
-def kbevent( event ):
-    	type = 0
-	conn1.send(str(type).zfill(2))  	
-	conn1.send(event.Key)
-
-def quit(event):
-	print ("Double Click, so let's stop", repr(event))
 
 #Receving frames and displaying it
 counter = 0
@@ -155,10 +226,10 @@ if(pid != 0):
 			tot_recv += len(chunk)
 		msg = ''.join(msg)
 		pil_bytes = io.BytesIO(msg)
-		pil_image = Image.open(pil_bytes)
+		pil_image = PIL.Image.open(pil_bytes)
 		img_np = np.array(pil_image)
 		frame = cv2.cvtColor(np.array(img_np), cv2.COLOR_GRAY2RGB)
-		pil_image = Image.fromarray(frame)
+		pil_image = PIL.Image.fromarray(frame)
 		pil_image = pil_image.resize((screen_width,screen_height), PIL.Image.ANTIALIAS)
 		photo = ImageTk.PhotoImage(image = pil_image)	
 		if (counter == 0) :	
