@@ -160,6 +160,12 @@ else:
 					pyautogui.press('right')
 				elif x == 'Left':
 					pyautogui.press('left')
+				elif x == 'Term':
+					pyautogui.hotkey('ctrl', 'alt', 't')
+				elif x == "period":
+					pyautogui.press('.')
+				elif x == "apostrophe":
+					pyautogui.press('"')
 				else:
 					pyautogui.press(x)
 			if type == 3:
